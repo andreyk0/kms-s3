@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-7.5
+resolver: nightly-2016-10-25
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -37,6 +37,16 @@ resolver: lts-7.5
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - '.'
+- '../amazonka/amazonka'
+- '../amazonka/amazonka-kms'
+- '../amazonka/amazonka-s3'
+- '../amazonka/amazonka-s3-encryption'
+- '../amazonka/core'
+# ^^ point to local packages for now, amazonka-s3-encryption is not officially released yet
+#    https://github.com/brendanhay/amazonka
+
+
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps: []
