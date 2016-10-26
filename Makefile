@@ -1,7 +1,7 @@
 TARGET=target
 EXE=$(TARGET)/kms-s3
 DIST_EXE=$(EXE)-$(shell uname -s)-$(shell uname -m)
-DIST_EXE_SIG=$(DIST_EXE).gpg.sig
+DIST_EXE_SIG=$(DIST_EXE).sig
 
 build:
 	stack build kms-s3
