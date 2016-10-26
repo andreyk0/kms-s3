@@ -29,6 +29,7 @@ executable kms-s3
                      , conduit
                      , conduit-extra
                      , containers
+                     , directory
                      , filepath
                      , gitrev
                      , lens

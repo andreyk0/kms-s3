@@ -7,6 +7,7 @@ module Main where
 
 import           Args
 import           Control.Lens
+import           Control.Monad.IO.Class
 import           Control.Monad.Trans.AWS
 import           Data.Conduit
 import qualified Data.Conduit.Binary as CB
@@ -17,6 +18,8 @@ import           Network.AWS.S3
 import           Network.AWS.S3.Encryption
 import           Network.AWS.S3.Encryption.Types
 import           Network.URI
+import           System.Directory
+import           System.FilePath
 import           System.IO
 
 
@@ -48,7 +51,8 @@ main = runWithArgs $ \Args{..} -> do
         res <- decrypt (getObject s3Bucket s3Obj)
         let cOut = case argsFileName
                      of Nothing -> CB.sinkHandle stdout
-                        Just f -> CB.sinkFile f
+                        Just f -> do liftIO $ mkParentDirs f
+                                     CB.sinkFile f
         view gorsBody res `sinkBody` cOut
 
       s3kmsEncrypt = runResourceT . runAWST keyEnv $ do
@@ -89,6 +93,13 @@ parseS3URI s3u = do
 
   return ( ((BucketName . T.pack) uriRegName)
          , (ObjectKey objKey) )
+
+
+mkParentDirs :: FilePath
+             -> IO ()
+mkParentDirs fp = do
+  let (dir, _) = splitFileName fp
+  createDirectoryIfMissing True dir
 
 
 hBinMode :: Handle
