@@ -30,6 +30,7 @@ executable kms-s3
                      , conduit-extra
                      , containers
                      , filepath
+                     , gitrev
                      , lens
                      , network-uri
                      , optparse-applicative

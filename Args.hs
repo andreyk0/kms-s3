@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module Args (
   Args(..)
@@ -8,16 +9,20 @@ module Args (
 ) where
 
 
+import           Control.Monad
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Development.GitRev
 import           Network.AWS.Data
 import           Network.AWS.Types
 import           Options.Applicative
+import           System.Exit
 
 data Cmd = CmdGet | CmdPut deriving (Eq, Show)
 
 data Args = Args { argsVerbose :: !Bool
+                 , argsVersion :: !Bool
                  , argsAwsProfile :: !(Maybe Text)
                  , argsRegion :: !(Maybe Region)
                  , argsKmsKey :: !Text
@@ -33,6 +38,11 @@ parseArgs = Args
          ( long "verbose"
         <> short 'v'
         <> help "Be verbose.")
+
+     <*> switch
+         ( long "version"
+        <> short 'V'
+        <> help "Print version and exit.")
 
      <*> (optional $ fmap T.pack $ strOption
          ( long "aws-profile"
@@ -75,9 +85,14 @@ parseRegion = eitherReader (fromText . T.pack)
 
 runWithArgs:: (Args -> IO ())
            -> IO ()
-runWithArgs rwa = execParser opts >>= rwa
+runWithArgs rwa = execParser opts >>= printVersion >>= rwa
   where
     opts = info (helper <*> parseArgs)
       ( fullDesc
      <> header "A utility to maintain KMS-encrypted files in S3."
-     <> progDesc "Encrypt/Upload a file to S3 or Download/Decrypt it." )
+     <> progDesc ("Encrypt/Upload a file to S3 or Download/Decrypt it."
+                <> "Source: https://github.com/andreyk0/kms-s3"))
+
+    printVersion args@Args{..} = do
+      when argsVersion $ die $ "Version: " <> $(gitBranch) <> "@" <> $(gitHash)
+      return args
