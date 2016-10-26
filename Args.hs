@@ -3,19 +3,27 @@
 
 module Args (
   Args(..)
+, Cmd(..)
 , runWithArgs
 ) where
 
 
 import           Data.Monoid
+import           Data.Text (Text)
+import qualified Data.Text as T
+import           Network.AWS.Data
+import           Network.AWS.Types
 import           Options.Applicative
 
+data Cmd = CmdGet | CmdPut deriving (Eq, Show)
 
-data Custom = Custom1 | Custom2 deriving (Eq, Show, Ord)
-
-
-data Args = Args { argVerbose :: Bool
-                 , argCustom :: Custom
+data Args = Args { argsVerbose :: !Bool
+                 , argsAwsProfile :: !(Maybe Text)
+                 , argsRegion :: !(Maybe Region)
+                 , argsKmsKey :: !Text
+                 , argsS3Uri :: !String
+                 , argsFileName :: !(Maybe FilePath)
+                 , argsCmd :: !Cmd
                  } deriving (Show)
 
 
@@ -25,20 +33,44 @@ parseArgs = Args
          ( long "verbose"
         <> short 'v'
         <> help "Be verbose.")
-     <*> option parseCustomArg
-         ( long "custom-arg"
-        <> short 'c'
-        <> value Custom1
-        <> showDefault
-        <> help "Arg with a custom parser." )
+
+     <*> (optional $ fmap T.pack $ strOption
+         ( long "aws-profile"
+        <> short 'p'
+        <> help "AWS profile. Default config entry will be used if not given." ))
+
+     <*> (optional $ option parseRegion
+         ( long "region"
+        <> short 'r'
+        <> help "AWS region." ))
+
+     <*> (fmap T.pack $ strOption
+         ( long "kms-key"
+        <> short 'k'
+        <> metavar "KEY_ARN"
+        <> help "KMS master key, e.g. arn:aws:kms:us-east-1:123456789012:alias/testkey, see a list of keys in IAM console."))
+
+     <*> strOption
+         ( long "s3-uri"
+        <> short 's'
+        <> help "S3 URI" )
+
+     <*> (optional $ strOption
+         ( long "file"
+        <> short 'f'
+        <> help "Name of the local file" ))
+     <*> subparser
+         ( command "get"
+           (info (pure CmdGet)
+             ( progDesc "Get file from S3 and decrypt." ))
+        <> command "put"
+           (info (pure CmdPut)
+           ( progDesc "Put file to S3 and encrypt." ))
+         )
 
 
-parseCustomArg :: ReadM Custom
-parseCustomArg = eitherReader $ \s ->
-  case s
-    of "c1" -> Right Custom1
-       "c2" -> Right Custom2
-       x    -> Left $ "Failed to parse custom argument " <> x <> ", expected 'c1' or 'c2'"
+parseRegion :: ReadM Region
+parseRegion = eitherReader (fromText . T.pack)
 
 
 runWithArgs:: (Args -> IO ())
@@ -47,6 +79,5 @@ runWithArgs rwa = execParser opts >>= rwa
   where
     opts = info (helper <*> parseArgs)
       ( fullDesc
-     <> header "Add program header here."
-     <> progDesc "Add program description here")
-
+     <> header "A utility to maintain KMS-encrypted files in S3."
+     <> progDesc "Encrypt/Upload a file to S3 or Download/Decrypt it." )
