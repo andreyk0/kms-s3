@@ -9,6 +9,10 @@ build:
 build-prof:
 	stack build --profile --ghc-options="-rtsopts" kms-s3
 
+# Requires dockerized toolchain: https://github.com/andreyk0/docker-haskell-platform-alpine
+build-linux-static:
+	docker-haskell-build-linux-static
+
 install:
 	stack install kms-s3
 

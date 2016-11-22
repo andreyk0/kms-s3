@@ -44,6 +44,7 @@ packages:
 - '../amazonka/core'
 # ^^ point to local packages for now, amazonka-s3-encryption is not officially released yet
 #    https://github.com/brendanhay/amazonka
+#    Works with 1.4.4.2 tag
 
 
 

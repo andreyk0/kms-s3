@@ -37,3 +37,5 @@ To build it from source you need [haskell stack](https://docs.haskellstack.org/e
 At the moment it requres a local git clone of [amazonka](https://github.com/brendanhay/amazonka)
 library on the same level as this project, should be able to remove that when
 newer APIs are officially published.
+
+To build static linux binaries: [dockerized stack toolchain](https://github.com/andreyk0/docker-haskell-platform-alpine).
