@@ -9,7 +9,6 @@ module Args (
 ) where
 
 
-import           Control.Monad
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -22,7 +21,6 @@ import           System.Exit
 data Cmd = CmdGet | CmdPut deriving (Eq, Show)
 
 data Args = Args { argsVerbose :: !Bool
-                 , argsVersion :: !Bool
                  , argsAwsProfile :: !(Maybe Text)
                  , argsRegion :: !(Maybe Region)
                  , argsKmsKey :: !Text
@@ -32,17 +30,15 @@ data Args = Args { argsVerbose :: !Bool
                  } deriving (Show)
 
 
+data CLIArgs = CLIArgs Args | CLIVersion deriving (Show)
+
+
 parseArgs :: Parser Args
 parseArgs = Args
      <$> switch
          ( long "verbose"
         <> short 'v'
         <> help "Be verbose.")
-
-     <*> switch
-         ( long "version"
-        <> short 'V'
-        <> help "Print version and exit.")
 
      <*> (optional $ fmap T.pack $ strOption
          ( long "aws-profile"
@@ -79,6 +75,15 @@ parseArgs = Args
          )
 
 
+parseCliArgs :: Parser CLIArgs
+parseCliArgs =
+     ( (\_ -> CLIVersion) <$> switch
+         ( long "version"
+        <> short 'V'
+        <> help "Print version and exit.") )
+    <|> ( CLIArgs <$> parseArgs )
+
+
 parseRegion :: ReadM Region
 parseRegion = eitherReader (fromText . T.pack)
 
@@ -87,12 +92,13 @@ runWithArgs:: (Args -> IO ())
            -> IO ()
 runWithArgs rwa = execParser opts >>= printVersion >>= rwa
   where
-    opts = info (helper <*> parseArgs)
+    opts = info (helper <*> parseCliArgs)
       ( fullDesc
      <> header "A utility to maintain KMS-encrypted files in S3."
      <> progDesc ("Encrypt/Upload a file to S3 or Download/Decrypt it."
                 <> "Source: https://github.com/andreyk0/kms-s3"))
 
-    printVersion args@Args{..} = do
-      when argsVersion $ die $ "Version: " <> $(gitBranch) <> "@" <> $(gitHash)
-      return args
+    printVersion cliArgs =
+      case cliArgs
+        of CLIVersion -> die $ "Version: " <> $(gitBranch) <> "@" <> $(gitHash)
+           CLIArgs args -> return args
