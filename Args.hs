@@ -22,6 +22,7 @@ data Cmd = CmdGet | CmdPut deriving (Eq, Show)
 
 data Args = Args { argsVerbose :: !Bool
                  , argsAwsProfile :: !(Maybe Text)
+                 , argsAwsRoleArn :: !(Maybe Text)
                  , argsRegion :: !(Maybe Region)
                  , argsKmsKey :: !Text
                  , argsS3Uri :: !String
@@ -44,6 +45,11 @@ parseArgs = Args
          ( long "aws-profile"
         <> short 'p'
         <> help "AWS profile. Default config entry will be used if not given." ))
+
+     <*> (optional $ fmap T.pack $ strOption
+         ( long "aws-role-arn"
+        <> short 'R'
+        <> help "AWS role to assume." ))
 
      <*> (optional $ option parseRegion
          ( long "region"

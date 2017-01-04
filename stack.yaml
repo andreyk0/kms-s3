@@ -41,6 +41,7 @@ packages:
 - '../amazonka/amazonka-kms'
 - '../amazonka/amazonka-s3'
 - '../amazonka/amazonka-s3-encryption'
+- '../amazonka/amazonka-sts'
 - '../amazonka/core'
 # ^^ point to local packages for now, amazonka-s3-encryption is not officially released yet
 #    https://github.com/brendanhay/amazonka

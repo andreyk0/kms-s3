@@ -25,11 +25,13 @@ executable kms-s3
                      , amazonka-core
                      , amazonka-s3
                      , amazonka-s3-encryption
+                     , amazonka-sts
                      , bytestring
                      , conduit
                      , conduit-extra
                      , containers
                      , directory
+                     , exceptions
                      , filepath
                      , gitrev
                      , lens
