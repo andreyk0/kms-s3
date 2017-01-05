@@ -34,8 +34,11 @@ Available commands:
 # Development
 
 To build it from source you need [haskell stack](https://docs.haskellstack.org/en/stable/README/)
-At the moment it requres a local git clone of [amazonka](https://github.com/brendanhay/amazonka)
+At the moment it requres a local git clone of [amazonka](https://github.com/brendanhay/amazonka/tree/develop)
 library on the same level as this project, should be able to remove that when
-newer APIs are officially published.
+newer APIs are officially published. Make sure you checkout the *develop*
+branch, at the moment it matters because it has a few important bug fixes.
+For reference, everything compiles fine against amazonka dfe1ce5db10bba7d3fa7420d3da629731976047a.
 
 To build static linux binaries: [dockerized stack toolchain](https://github.com/andreyk0/docker-haskell-platform-alpine).
+Makefile assumes it's in your PATH.
