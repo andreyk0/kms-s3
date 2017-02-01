@@ -30,6 +30,10 @@ Available commands:
   put                      Put file to S3 and encrypt.
 ```
 
+# S3 bucket SSE
+
+Currently this tool assumes that S3 bucket implements an [AES256 SSE](https://aws.amazon.com/blogs/security/how-to-prevent-uploads-of-unencrypted-objects-to-amazon-s3/).
+
 
 # Development
 
