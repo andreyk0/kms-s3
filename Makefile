@@ -18,7 +18,7 @@ install:
 
 bindist:
 	mkdir -p $(TARGET)
-	stack --local-bin-path $(TARGET) install kms-s3
+	stack --local-bin-path $(TARGET) install $(STACK_OPTS) kms-s3
 	upx --best $(EXE)
 	mv $(EXE) $(DIST_EXE)
 	gpg --output $(DIST_EXE_SIG) --detach-sign $(DIST_EXE)
