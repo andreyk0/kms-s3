@@ -13,10 +13,12 @@ import           Data.Conduit
 import qualified Data.Conduit.Binary as CB
 import           Data.Monoid
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import           Network.AWS.Auth
 import           Network.AWS.S3
 import           Network.AWS.S3.Encryption
 import           Network.AWS.S3.Encryption.Types
+import           Network.AWS.STS
 import           Network.URI
 import           System.Directory
 import           System.FilePath
@@ -24,20 +26,11 @@ import           System.IO
 
 
 main:: IO ()
-main = runWithArgs $ \Args{..} -> do
-  lgr <- newLogger (if argsVerbose then Debug else Info) stderr
+main = runWithArgs $ \ args@Args{..} -> do
 
-  env <- case argsAwsProfile
-                 of Nothing -> newEnv Discover
-                    Just p  -> do cf <- credFile
-                                  newEnv $ FromFile p cf
+  env <- getAwsEnv args
 
-  let setReg = case argsRegion
-                 of Nothing -> id
-                    Just r -> set envRegion r
-
-      keyEnv = KeyEnv ((set envLogger lgr . setReg) env)
-                      (kmsKey argsKmsKey)
+  let keyEnv = KeyEnv env (kmsKey argsKmsKey)
 
   (s3Bucket, s3Obj) <- case parseS3URI argsS3Uri
                          of Left e -> error e
@@ -70,6 +63,36 @@ main = runWithArgs $ \Args{..} -> do
   case argsCmd
     of CmdGet -> s3kmsDecrypt
        CmdPut -> s3kmsEncrypt
+
+
+getAwsEnv :: Args
+          -> IO Env
+getAwsEnv Args{..} = do
+  lgr <- newLogger (if argsVerbose then Debug else Info) stderr
+
+  let setReg = case argsRegion
+                 of Nothing -> id
+                    Just r -> set envRegion r
+
+      setLgr = set envLogger lgr
+
+  initialEnv <- (setLgr . setReg) <$>
+                ( case argsAwsProfile
+                    of Nothing -> newEnv Discover
+                       Just p  -> do cf <- credFile
+                                     newEnv $ FromFile p cf )
+
+  let sessionCreds stsCreds = FromSession ((AccessKey . TE.encodeUtf8)    (stsCreds ^. cAccessKeyId))
+                                          ((SecretKey . TE.encodeUtf8)    (stsCreds ^. cSecretAccessKey))
+                                          ((SessionToken . TE.encodeUtf8) (stsCreds ^. cSessionToken))
+
+  case argsAwsRoleArn
+    of Nothing -> return initialEnv
+       Just r -> runResourceT . runAWST initialEnv $ do
+                   res <- send $ assumeRole r "kmsrole"
+                   case view arrsCredentials res
+                     of Just cr -> setLgr <$> newEnv (sessionCreds cr)
+                        Nothing -> error $ "Unable to assume AWS role " <> (show argsAwsRoleArn)
 
 
 parseS3URI :: String
