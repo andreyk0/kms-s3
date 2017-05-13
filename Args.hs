@@ -40,17 +40,17 @@ parseArgs = Args
         <> short 'v'
         <> help "Be verbose.")
 
-     <*> (optional $ fmap T.pack $ strOption
+     <*> optional (T.pack <$> strOption
          ( long "aws-profile"
         <> short 'p'
         <> help "AWS profile. Default config entry will be used if not given." ))
 
-     <*> (optional $ option parseRegion
+     <*> optional (option parseRegion
          ( long "region"
         <> short 'r'
         <> help "AWS region." ))
 
-     <*> (fmap T.pack $ strOption
+     <*> (T.pack <$> strOption
          ( long "kms-key"
         <> short 'k'
         <> metavar "KEY_ARN"
@@ -61,7 +61,7 @@ parseArgs = Args
         <> short 's'
         <> help "S3 URI" )
 
-     <*> (optional $ strOption
+     <*> optional (strOption
          ( long "file"
         <> short 'f'
         <> help "Name of the local file" ))
@@ -77,7 +77,7 @@ parseArgs = Args
 
 parseCliArgs :: Parser CLIArgs
 parseCliArgs =
-     ( (\_ -> CLIVersion) <$> switch
+     ( const CLIVersion <$> switch
          ( long "version"
         <> short 'V'
         <> help "Print version and exit.") )

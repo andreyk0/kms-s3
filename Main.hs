@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -57,11 +56,11 @@ main = runWithArgs $ \Args{..} -> do
 
       s3kmsEncrypt = runResourceT . runAWST keyEnv $ do
         oBody <- case argsFileName
-                   of Nothing -> fmap toBody $ CB.sourceHandle stdin $$ CB.sinkLbs
-                      Just f -> fmap toBody $ hashedFile f
+                   of Nothing -> toBody <$> (CB.sourceHandle stdin $$ CB.sinkLbs)
+                      Just f -> toBody <$> hashedFile f
 
         -- an unnecessary extra bit of paranoia, encrypt at rest with default S3 key
-        let req = (set poServerSideEncryption (Just AES256))
+        let req = set poServerSideEncryption (Just AES256)
                     (putObject s3Bucket s3Obj oBody)
 
         _ <- encrypt req
@@ -91,8 +90,8 @@ parseS3URI s3u = do
             then Left $ "URI path must not be empty (object key part) in " <> s3u
             else (Right . T.tail . T.pack) uriPath -- skip 1st '/'
 
-  return ( ((BucketName . T.pack) uriRegName)
-         , (ObjectKey objKey) )
+  return ( (BucketName . T.pack) uriRegName
+         , ObjectKey objKey )
 
 
 mkParentDirs :: FilePath
