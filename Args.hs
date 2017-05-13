@@ -23,7 +23,7 @@ data Cmd = CmdGet | CmdPut deriving (Eq, Show)
 data Args = Args { argsVerbose :: !Bool
                  , argsAwsProfile :: !(Maybe Text)
                  , argsRegion :: !(Maybe Region)
-                 , argsKmsKey :: !Text
+                 , argsKmsKey :: !(Maybe Text) -- ^ not needed for 'get' but keeping around for backwards compatibility
                  , argsS3Uri :: !String
                  , argsFileName :: !(Maybe FilePath)
                  , argsCmd :: !Cmd
@@ -50,7 +50,7 @@ parseArgs = Args
         <> short 'r'
         <> help "AWS region." ))
 
-     <*> (T.pack <$> strOption
+     <*> optional (T.pack <$> strOption
          ( long "kms-key"
         <> short 'k'
         <> metavar "KEY_ARN"

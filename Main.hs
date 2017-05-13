@@ -6,10 +6,12 @@ module Main where
 
 import           Args
 import           Control.Lens
+import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.AWS
 import           Data.Conduit
 import qualified Data.Conduit.Binary as CB
+import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Text as T
 import           Network.AWS.Auth
@@ -35,8 +37,11 @@ main = runWithArgs $ \Args{..} -> do
                  of Nothing -> id
                     Just r -> set envRegion r
 
-      keyEnv = KeyEnv ((set envLogger lgr . setReg) env)
-                      (kmsKey argsKmsKey)
+      awsEnv = (set envLogger lgr . setReg) env
+
+      -- apparently there's no need for key when decrypting,
+      -- it's part of S3 object's metadata
+      keyEnv = KeyEnv awsEnv ((kmsKey . fromMaybe "unused") argsKmsKey)
 
   (s3Bucket, s3Obj) <- case parseS3URI argsS3Uri
                          of Left e -> error e
@@ -47,6 +52,7 @@ main = runWithArgs $ \Args{..} -> do
   hBinMode stdout
 
   let s3kmsDecrypt = runResourceT . runAWST keyEnv $ do
+        when (isJust argsKmsKey) $ liftIO $ hPutStrLn stderr "Warning: ignoring KMS key parameter, not needed to decrypt."
         res <- decrypt (getObject s3Bucket s3Obj)
         let cOut = case argsFileName
                      of Nothing -> CB.sinkHandle stdout
@@ -55,6 +61,7 @@ main = runWithArgs $ \Args{..} -> do
         view gorsBody res `sinkBody` cOut
 
       s3kmsEncrypt = runResourceT . runAWST keyEnv $ do
+        unless (isJust argsKmsKey) $ error "KMS key parameter is required for encryption!"
         oBody <- case argsFileName
                    of Nothing -> toBody <$> (CB.sourceHandle stdin $$ CB.sinkLbs)
                       Just f -> toBody <$> hashedFile f
