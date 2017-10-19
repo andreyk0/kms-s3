@@ -32,9 +32,20 @@ Available commands:
   put                      Put file to S3 and encrypt.
 ```
 
+# Install
+
+```bash
+curl -L https://raw.githubusercontent.com/gilt/kms-s3/master/install | /bin/bash
+```
+
+
 # S3 bucket SSE
 
 Currently this tool assumes that S3 bucket implements an [AES256 SSE](https://aws.amazon.com/blogs/security/how-to-prevent-uploads-of-unencrypted-objects-to-amazon-s3/).
+
+Example [bucket policy](eg-bucket-policy.json) that implements SSE.
+Example [lifecycle](eg-bucket-lifecycle.json) policy that enables versioning (you really need that to prevent accidental data loss).
+
 
 # Development
 

@@ -1,0 +1,12 @@
+{
+  "Rules": [
+    {
+      "Status": "Enabled",
+      "Prefix": "",
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 365
+      },
+      "ID": "CleanUpOldVersions"
+    }
+  ]
+}

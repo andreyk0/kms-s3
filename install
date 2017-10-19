@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Installs kms-s3 tool
+
+set -e
+
+DL=https://github.com/gilt/kms-s3/releases/download/v0.5
+DL_BIN=$DL/kms-s3-$(uname -s)-$(uname -m)
+TARGET=/usr/local/bin/kms-s3
+
+echo "Downloading binary from $DL_BIN ..."
+echo "You may be prompted for your local unix password by sudo"
+sudo curl -L -o $TARGET $DL_BIN
+
+curl -L -o /tmp/kms-s3.sig $DL_BIN.sig
+
+if (type gpg2) ; then
+  GPG=gpg2
+elif (type gpg) ; then
+  GPG=gpg
+fi
+
+# Expects gnupg2.x
+if [ -z "$GPG" ] ; then
+  echo "GPG is not found on this system, continuing without signature verification, it's a good idea to install GPG and re-run the install script"
+else
+  echo "Using $(which $GPG)"
+  echo "Downloading GPG pub keyring ..."
+  curl -L -o /tmp/kms-s3-pub-keyring.gpg https://raw.githubusercontent.com/gilt/kms-s3/master/pubkeyring.gpg
+
+  echo "Verifying signature ..."
+  $GPG --no-default-keyring --keyring /tmp/kms-s3-pub-keyring.gpg --verify /tmp/kms-s3.sig $TARGET || {
+    echo "GPG signature check failed!";
+    rm -f $TARGET
+    exit 1;
+  }
+fi
+
+echo "Making downloaded binary executable ..."
+echo "You may be prompted for your local unix password by sudo"
+sudo chmod 755 $TARGET
+
+echo
+echo
+echo "Installed $TARGET"
+echo "Please make sure it's in your shell PATH"
